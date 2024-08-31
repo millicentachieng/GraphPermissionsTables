@@ -1,0 +1,32 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div style="min-height: 500px;">
+
+    <form method="post">
+        <div>
+            <select id="httpMethod" name="HttpMethod" style="margin-right: 20px;">
+                <!option @(Model.HttpMethod == "GET" ? "selected" : "")>GET<!/option>
+                <!option @(Model.HttpMethod == "POST" ? "selected" : "")>POST<!/option>
+                <!option @(Model.HttpMethod == "PUT" ? "selected" : "")>PUT<!/option>
+                <!option @(Model.HttpMethod == "DELETE" ? "selected" : "")>DELETE<!/option>
+                <!option @(Model.HttpMethod == "PATCH" ? "selected" : "")>PATCH<!/option>
+        </select>
+
+            <input type="text" id="requestUrl" style="margin-right: 20px; width: 400px;" name="RequestUrl" value="@Model.RequestUrl" placeholder="Enter request path starting with /" required />          
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+    @if (Model.ErrorMessage != null)
+    {
+        <div style="color: red; margin-top: 5px;">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.MarkdownTable))
+    {
+        <p style="margin-top: 20px;">Markdown Table:</p>
+        <pre>@Html.Raw(@Model.MarkdownTable)</pre>
+    }
+</div>
