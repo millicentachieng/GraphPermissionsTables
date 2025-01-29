@@ -24,11 +24,16 @@ namespace GraphPermissionsTables.Pages
 
         public async Task OnPostAsync()
         {
+            bool containsDollarRef = RequestUrl.EndsWith("$ref", StringComparison.OrdinalIgnoreCase);
+
             // remove $ref, $count, $value segments from paths
             RequestUrl = QueryOptionSegementRegex.Replace(RequestUrl, string.Empty).TrimEnd('/').ToLowerInvariant();
 
             // normalize function parameters
             RequestUrl = FunctionParameterRegex.Replace(RequestUrl, "{value}");
+
+            if (containsDollarRef)
+                RequestUrl += "/$ref";
 
             if (!RequestUrl.StartsWith("/"))
             {
@@ -51,11 +56,19 @@ namespace GraphPermissionsTables.Pages
             {
                 try
                 {
-                    var generator = new PermissionsStubGenerator(PermissionsDocument, RequestUrl, HttpMethod, false, true);
-                    var mdTable = generator.GenerateTable();
+                    string mdTable = GetMarkdownTable(RequestUrl, PermissionsDocument);
                     if (string.IsNullOrWhiteSpace(mdTable))
                     {
-                        ErrorMessage = "Could not find permissions for path";
+                        if (containsDollarRef) {
+                            string trimmedRequestUrl = RequestUrl.Substring(0, RequestUrl.Length - 4);
+                            mdTable = GetMarkdownTable(trimmedRequestUrl, PermissionsDocument);
+
+                            if (string.IsNullOrWhiteSpace(mdTable))
+                            {
+                                ErrorMessage = "Could not find permissions for path";
+                                return;
+                            }
+                        }
                     }
                     else
                     {
@@ -64,7 +77,7 @@ namespace GraphPermissionsTables.Pages
                 }
                 catch (Exception ex)
                 {
-                    ErrorMessage = $"Could not load fetch permissions: {ex.Message}";
+                    ErrorMessage = $"Could not fetch permissions: {ex.Message}";
                     return;
                 }
             }
@@ -72,6 +85,12 @@ namespace GraphPermissionsTables.Pages
             {
                 ErrorMessage = $"Permissions document was not found";
             }
+        }
+
+        private string GetMarkdownTable(string requestUrl, PermissionsDocument permissionsDocument)
+        {
+            var generator = new PermissionsStubGenerator(PermissionsDocument, RequestUrl, HttpMethod, false, true);
+            return generator.GenerateTable().Trim();
         }
 
         private string ConvertMdToHtml(string markdownTable)
